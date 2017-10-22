@@ -18,13 +18,9 @@ void counterInterrupt(void);
 volatile uint32_t counter = 0;
 
 int main(void) {
-	if(wiringPiSetup() < 1){
-		fprintf(stderr, "Unable to setup WiringPi.\n", strerror(errno));
-	}
+	wiringPiSetup();
 
-	if(wiringPiISR(COUNTER_PIN, INT_EDGE_RISING, counterInterrupt) < 1){
-		fprintf(stderr, "Unable to setup Interrupt.\n", strerror(errno));
-	}
+	wiringPiISR(COUNTER_PIN, INT_EDGE_RISING, counterInterrupt);
 
 	while(TRUE){
 		delay(1000);
