@@ -7,6 +7,7 @@
 #include <wiringPi.h>
 #include <errno.h>
 #include <time.h>
+#include <iostream.h>
 #include <string.h>
 #include <stdint.h>
 
@@ -34,7 +35,8 @@ int main(void) {
 
 void counterInterrupt(void){
 	static uint8_t	counter = 0;
-	static int oldTime = micros();
+	static int oldTime;
+	oldTime = micros();
 	static int newTime;
 	counter++;
 	if(counter >= SAMPLING_NUMBER){
