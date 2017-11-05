@@ -18,6 +18,8 @@
 #define COUNTER_PIN 0
 #define PUMP_PIN 1
 #define VALVE_PIN 3
+#define PWM_MIN 0
+#define PWM_MAX 1024
 
 #define KD 0
 #define KP 0
@@ -35,8 +37,14 @@
 
 #define SAMPLING_NUMBER 10
 
+#define AVERAGING_INTERVAL 10
+
 void counterInterrupt(void);
 void rPiSetup(void);
+int setTarget(int, int);
+int setTotal(int, int);
+int getError(int);
+int controlPump(int, int);
 
 volatile int timeDiff = 0;
 
@@ -61,13 +69,20 @@ int main(int argc, char **argv) {
 	// Configure Raspberry Pi
 	rPiSetup();
 
-	while(TRUE){
-		
-
+	// Set up targets for control
+	int target = setTarget(rate, volume);
+	int totalTarget = setTotal(rate, volume);
+	int error;
+	int total = 0;
+	
+	while(total < totalTarget){	
+		error = getError(target);
+		total = controlPump(error, total);
 	}
 	return 0;
 }
 
+// Runs an interrupt to count input pulses from oscillator
 void counterInterrupt(void){
 	static uint8_t	counter = 0;
 	static int oldTime = micros();
@@ -85,11 +100,41 @@ void counterInterrupt(void){
 }
 
 // rPiSetup: Sets up WiringPi, Interrupt, and Output Pins for proper board operation
+// The board is setup with the pump off, interrupt enabled and valve open.
 void rPiSetup(void){
 	wiringPiSetup();
 
 	wiringPiISR(COUNTER_PIN, INT_EDGE_RISING, counterInterrupt);
 	pinMode(PUMP_PIN, PWM_OUTPUT);
+	pwmWRITE(PUMP_PIN, PWM_MIN);
+
 	pinMode(VALVE_PIN, OUTPUT);
+	digitalWrite(VALVE_PIN, LOW);
 	return;
+}
+
+// setTarget: Takes the specified rate, volume, and averaging interval, and returns the 
+// target count value per measurement interval 
+int setTarget(int rate, int volume){
+	return -1;
+}
+
+// setTotal: Takes the specified rate, volume, and averaging interval, and returns the 
+// total target count value over the duration of the pump infusion
+int setTotal(int rate, int volume){
+	return -1;
+}
+
+// getErro: Takes the target count value per measurement interval, then counts over the 
+// specified interval to determine the error over the interval. The error is returned
+int getError(int target){
+	// Use the counts read in from the timeDiff value
+	// Maybe add some sort of jump rejection to deal with setpoint shifts from movement
+	return -1;
+}
+
+// controlPump: Takes the error over an interval and controls the air pump and valve in
+// response to this error. Returns the accumulated total count. 
+int controlPump(int error, int total){
+	return -1;
 }
