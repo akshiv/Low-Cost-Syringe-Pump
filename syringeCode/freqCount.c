@@ -7,7 +7,6 @@
 #include <wiringPi.h>
 #include <errno.h>
 #include <time.h>
-#include <iostream.h>
 #include <string.h>
 #include <stdint.h>
 
@@ -15,7 +14,7 @@
 #define HIGH 1
 #define COUNTER_PIN 0
 
-#define SAMPLING_NUMBER 10
+#define SAMPLING_NUMBER 100
 
 void counterInterrupt(void);
 
@@ -27,22 +26,26 @@ int main(void) {
 	wiringPiISR(COUNTER_PIN, INT_EDGE_RISING, counterInterrupt);
 
 	while(TRUE){
-		delay(500);
-		std::cout << timeDiff << std::endl;
 	}
 	return 0;
 }
 
 void counterInterrupt(void){
 	static uint8_t	counter = 0;
+	static uint8_t first = 0;
 	static int oldTime;
-	oldTime = micros();
+	if(!first){
+		oldTime = micros();
+		first = 1;
+	}
+	// Need fix for the first time issue
 	static int newTime;
 	counter++;
 	if(counter >= SAMPLING_NUMBER){
 		newTime = micros();
 		if(newTime > oldTime){
 			timeDiff = newTime - oldTime;
+			printf("TimeDiff: %d \n", timeDiff);
 		}
 		oldTime = newTime;
 		counter = 0;
