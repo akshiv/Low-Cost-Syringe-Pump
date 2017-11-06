@@ -117,7 +117,7 @@ void rPiSetup(void){
 
 	wiringPiISR(COUNTER_PIN, INT_EDGE_RISING, counterInterrupt);
 	pinMode(PUMP_PIN, PWM_OUTPUT);
-	pwmWRITE(PUMP_PIN, PWM_MIN);
+	pwmWrite(PUMP_PIN, PWM_MIN);
 
 	pinMode(VALVE_PIN, OUTPUT);
 	digitalWrite(VALVE_PIN, LOW);
