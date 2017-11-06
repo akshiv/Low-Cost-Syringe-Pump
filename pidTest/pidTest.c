@@ -11,6 +11,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdint.h>
+#include <math.h>
 
 // Setup pin configurations
 #define LOW 0
@@ -26,8 +27,10 @@
 #define KI 0
 #define WINDUP_THRESH 10
 
-#define INFUSION_START 2000
-#define INFUSION_END 1000 // Need to set infusion limits based on known limits of values
+#define SYRINGE_MAX_READING 930000
+#define SYRINGE_MIN_READING 867000 // Need to set infusion limits based on known limits of values
+#define SYRINGE_VOLUME_UL 19000
+#define READING_PER_UL (double) (SYRINGE_MAX_READING-SYRINGE_MIN_READING)/SYRINGE_VOLUME_UL //Estimated as Linear
 
 // Configure rate and volume limits
 #define MAX_RATE 200000
@@ -37,14 +40,17 @@
 
 #define SAMPLING_NUMBER 10
 
-#define AVERAGING_INTERVAL 10
+#define AVERAGING_INTERVAL_S 10
+#define AVERAGING_INTERVAL_US AVERAGING_INTERVAL_S * 1000000
+#define HR_TO_SEC 0.000277778
 
 void counterInterrupt(void);
 void rPiSetup(void);
-int setTarget(int, int);
-int setTotal(int, int);
+int setTarget(int);
+int setTotal(int);
 int getError(int);
 int controlPump(int, int);
+double round(double);
 
 volatile int timeDiff = 0;
 
@@ -70,8 +76,8 @@ int main(int argc, char **argv) {
 	rPiSetup();
 
 	// Set up targets for control
-	int target = setTarget(rate, volume);
-	int totalTarget = setTotal(rate, volume);
+	int target = setTarget(rate);
+	int totalTarget = setTotal(volume);
 	int error;
 	int total = 0;
 	
@@ -85,7 +91,12 @@ int main(int argc, char **argv) {
 // Runs an interrupt to count input pulses from oscillator
 void counterInterrupt(void){
 	static uint8_t	counter = 0;
-	static int oldTime = micros();
+	static uint8_t first = 1;
+	static int oldTime;
+	if(first){
+		oldTime = micros();
+		first = 0;
+	}
 	static int newTime;
 	counter++;
 	if(counter >= SAMPLING_NUMBER){
@@ -115,14 +126,14 @@ void rPiSetup(void){
 
 // setTarget: Takes the specified rate, volume, and averaging interval, and returns the 
 // target count value per measurement interval 
-int setTarget(int rate, int volume){
-	return -1;
+int setTarget(int rate){
+	return round(HR_TO_SEC * rate * READING_PER_UL * AVERAGING_INTERVAL_S);
 }
 
 // setTotal: Takes the specified rate, volume, and averaging interval, and returns the 
 // total target count value over the duration of the pump infusion
-int setTotal(int rate, int volume){
-	return -1;
+int setTotal(int volume){
+	return round(READING_PER_UL * volume);
 }
 
 // getErro: Takes the target count value per measurement interval, then counts over the 
@@ -137,4 +148,9 @@ int getError(int target){
 // response to this error. Returns the accumulated total count. 
 int controlPump(int error, int total){
 	return -1;
+}
+
+// Rounds to nearest integer
+double round(double number){
+	return (number - floor(number) >= 0.5) ? ceil(number) : floor(number);
 }
