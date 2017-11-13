@@ -59,7 +59,7 @@ volatile int timeDiff = 0;
 
 int main(int argc, char **argv) {
 	// Read in the specified rate and volume parameters
-	if(argc != 3){
+	if(argc != 4){
 		fprintf(stderr, "Error: Need to input arguments as Flow rate, then total volume.\n");
 		exit(-1);
 	}
@@ -73,6 +73,13 @@ int main(int argc, char **argv) {
 	// Check to make sure the volume is in range
 	if(volume < MIN_VOLUME || volume > MAX_VOLUME){
 		fprintf(stderr, "Error: Volume target out of range.\n");
+		exit(-1);
+	}
+
+	int power = atoi(argv[3]); // Get power to push the pump with
+	// Check to make sure the power is in range
+	if(power < PWM_MIN || power > PWM_MAX){
+		fprintf(stderr, "Error: Power target out of range.\n");
 		exit(-1);
 	}
 	// Setup shutdown protocol
@@ -89,7 +96,7 @@ int main(int argc, char **argv) {
 	
 	digitalWrite(VALVE_PIN,HIGH);
 	delay(1000);
-	pwmWrite(PUMP_PIN,PWM_MAX/5);	
+	pwmWrite(PUMP_PIN,power);	
 	while(total < totalTarget){
 		delay(2000);	
 		printf("Feedback value: %d\n",timeDiff);
