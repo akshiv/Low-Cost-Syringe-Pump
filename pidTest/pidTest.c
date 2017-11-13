@@ -9,6 +9,7 @@
 #include <wiringPi.h>
 #include <errno.h>
 #include <time.h>
+#include <signal.h>
 #include <string.h>
 #include <stdint.h>
 #include <math.h>
@@ -18,7 +19,7 @@
 #define HIGH 1
 #define COUNTER_PIN 0
 #define PUMP_PIN 1
-#define VALVE_PIN 3
+#define VALVE_PIN 2
 #define PWM_MIN 0
 #define PWM_MAX 1024
 
@@ -44,6 +45,8 @@
 #define AVERAGING_INTERVAL_US AVERAGING_INTERVAL_S * 1000000
 #define HR_TO_SEC 0.000277778
 
+
+void exitHandler(int);
 void counterInterrupt(void);
 void rPiSetup(void);
 int setTarget(int);
@@ -72,6 +75,9 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Error: Volume target out of range.\n");
 		exit(-1);
 	}
+	// Setup shutdown protocol
+	signal(SIGINT, exitHandler);
+
 	// Configure Raspberry Pi
 	rPiSetup();
 
@@ -81,11 +87,24 @@ int main(int argc, char **argv) {
 	int error;
 	int total = 0;
 	
-	while(total < totalTarget){	
+	digitalWrite(VALVE_PIN,HIGH);
+	delay(1000);
+	pwmWrite(PUMP_PIN,PWM_MAX/5);	
+	while(total < totalTarget){
+		delay(2000);	
+		printf("Feedback value: %d\n",timeDiff);
 		error = getError(target);
+		printf("Target Rate: %d, Target Total: %d\n\n", target, totalTarget);
 		total = controlPump(error, total);
 	}
 	return 0;
+}
+
+// Handles the proper shutdown of the code 
+void exitHandler(int sig){
+	digitalWrite(VALVE_PIN,LOW);
+	pwmWrite(PUMP_PIN,PWM_MIN);
+	exit(0);
 }
 
 // Runs an interrupt to count input pulses from oscillator
