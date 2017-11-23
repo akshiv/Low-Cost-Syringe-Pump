@@ -26,7 +26,7 @@
 #define KD 0
 #define KP 0
 #define KI 0
-#define WINDUP_THRESH 10
+#define WINDUP_THRESHOLD 10
 
 #define SYRINGE_MAX_READING 930000
 #define SYRINGE_MIN_READING 867000 // Need to set infusion limits based on known limits of values
@@ -43,6 +43,11 @@
 
 #define AVERAGING_INTERVAL_S 10
 #define AVERAGING_INTERVAL_US AVERAGING_INTERVAL_S * 1000000
+
+#define JUMP_REJECTION_THRESHOLD 10000 // Need to determine and set properly
+#define MAX_CORRECTION 10000 
+#define BLOWOFF_TIME 100
+
 #define HR_TO_SEC 0.000277778
 
 
@@ -52,7 +57,8 @@ void rPiSetup(void);
 int setTarget(int);
 int setTotal(int);
 int getError(int);
-int controlPump(int, int);
+int controlPump(int, int, int);
+void drivePump(int, int);
 double round(double);
 
 volatile int timeDiff = 0;
@@ -102,7 +108,7 @@ int main(int argc, char **argv) {
 		printf("Feedback value: %d\n",timeDiff);
 		error = getError(target);
 		printf("Target Rate: %d, Target Total: %d\n\n", target, totalTarget);
-		total = controlPump(error, total);
+		total = controlPump(error, total, target);
 	}
 	return 0;
 }
@@ -165,18 +171,66 @@ int setTotal(int volume){
 // getErro: Takes the target count value per measurement interval, then counts over the 
 // specified interval to determine the error over the interval. The error is returned
 int getError(int target){
+	int change = 0;
+	int valOld = timeDiff;
+	int timeStart = micros();
+	while(micros() < (timeStart + AVERAGING_INTERVAL_US)){
+		// Make sure that this condition is what we want to use. Alternatively could
+		// force the values to only sum if changes indicate correct direction, but maybe
+		// this is bad for back pressure
+		if(fabs(timeDiff - valOld) < JUMP_REJECTION_THRESHOLD){
+			change = change + (timeDiff-valOld);
+		} 
+		valOld = timeDiff;
+	}
 	// Use the counts read in from the timeDiff value
 	// Maybe add some sort of jump rejection to deal with setpoint shifts from movement
-	return -1;
+	int error = change - target;
+	return error;
 }
 
 // controlPump: Takes the error over an interval and controls the air pump and valve in
 // response to this error. Returns the accumulated total count. 
-int controlPump(int error, int total){
-	return -1;
-}
+int controlPump(int error, int total, int target){
+	static int integralError = 0;
+	static int prevError = 0;
 
+	total = total + (error + target);
+	int derivError = error - prevError;
+	integralError = integralError + error; 
+	if (integralError > WINDUP_THRESHOLD){
+		integralError = WINDUP_THRESHOLD;
+	} else if(integralError < -1*WINDUP_THRESHOLD){
+		integralError = -1*WINDUP_THRESHOLD;
+	}
+
+	int correction = KP*error + KD*derivError + KI*integralError;			
+	drivePump(correction, target);
+
+	prevError = error;
+	return total;
+}
+// drivePump: controls the valve and pump to correctly react to a correction
+void drivePump(int correction, int target){
+	double scaledCorrection = (double) correction / target  * PWM_MAX;
+	if(scaledCorrection < 0){
+	// This means we need to pump more to catch up as we are lagging
+		pwmWrite(PUMP_PIN, (int) (-1*scaledCorrection));
+		digitalWrite(VALVE_PIN, HIGH);
+	} else if (scaledCorrection > target){
+	// If the pump is moving very fast we open the valve to blow off some air
+		pwmWrite(PUMP_PIN, PWM_MIN);
+		digitalWrite(VALVE_PIN, LOW);
+		delay(BLOWOFF_TIME*scaledCorrection/target);
+		digitalWrite(VALVE_PIN, HIGH);
+	} else {
+	// If the pump is slighly too fast we stop pumping
+		pwmWrite(PUMP_PIN, PWM_MIN);
+		digitalWrite(VALVE_PIN, HIGH);
+	}
+}
 // Rounds to nearest integer
 double round(double number){
 	return (number - floor(number) >= 0.5) ? ceil(number) : floor(number);
 }
+
