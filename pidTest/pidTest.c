@@ -50,6 +50,7 @@
 
 #define HR_TO_SEC 0.000277778
 
+#define SET_PWM_TEST 0
 
 void exitHandler(int);
 void counterInterrupt(void);
@@ -65,10 +66,18 @@ volatile int timeDiff = 0;
 
 int main(int argc, char **argv) {
 	// Read in the specified rate and volume parameters
+	#ifdef SET_PWM_TEST
 	if(argc != 4){
 		fprintf(stderr, "Error: Need to input arguments as Flow rate, then total volume.\n");
 		exit(-1);
 	}
+	#endif
+	#ifndef SET_PWM_TEST
+	if(argc != 3){
+		fprintf(stderr, "Error: Need to input arguments as Flow rate, then total volume.\n");
+		exit(-1);
+	}
+	#endif
 	int rate = atoi(argv[1]); // Get flow rate in uL/h
 	// Check to make sure the flow rate is in range
 	if( rate < MIN_RATE || rate > MAX_RATE ){
@@ -82,12 +91,15 @@ int main(int argc, char **argv) {
 		exit(-1);
 	}
 
+	#ifdef SET_PWM_TEST
 	int power = atoi(argv[3]); // Get power to push the pump with
 	// Check to make sure the power is in range
 	if(power < PWM_MIN || power > PWM_MAX){
 		fprintf(stderr, "Error: Power target out of range.\n");
 		exit(-1);
 	}
+	#endif
+
 	// Setup shutdown protocol
 	signal(SIGINT, exitHandler);
 
@@ -100,15 +112,20 @@ int main(int argc, char **argv) {
 	int error;
 	int total = 0;
 	
+	#ifdef SET_PWM_TEST
 	digitalWrite(VALVE_PIN,HIGH);
 	delay(1000);
-	pwmWrite(PUMP_PIN,power);	
+	pwmWrite(PUMP_PIN,power);
+	#endif		
+	
+	printf("Target Rate: %d, Target Total: %d\n\n", target, totalTarget);
 	while(total < totalTarget){
 		delay(2000);	
 		printf("Feedback value: %d\n",timeDiff);
+		#ifndef SET_PWM_TEST
 		error = getError(target);
-		printf("Target Rate: %d, Target Total: %d\n\n", target, totalTarget);
 		total = controlPump(error, total, target);
+		#endif
 	}
 	return 0;
 }
