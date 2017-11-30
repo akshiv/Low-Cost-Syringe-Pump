@@ -15,13 +15,14 @@
 #include "interrupt.h"
 
 // Setup constants for control
-#define KD 0
-#define KP 10
-#define KI 4
-#define WINDUP_THRESHOLD 100
-#define JUMP_REJECTION_THRESHOLD 10000 // Need to determine and set properly
-#define MAX_CORRECTION 10000 
-#define BLOWOFF_TIME 200
+#define KD 0   							// Derivative Control Constant 
+#define KP 10  							// Proportional Control Constant 
+#define KI 4							// Integral Control Constant 
+#define WINDUP_THRESHOLD 100 			// Used to avoid sudden changes
+#define JUMP_REJECTION_THRESHOLD 10000  // Need to determine and set properly
+#define MAX_CORRECTION 10000 			// ?
+#define BLOWOFF_TIME 200 				// ?
+#define PWM_STEP 1 						// Per cycle of the PWM rate 
 
 void exitHandler(int);
 int getError(int);
@@ -142,14 +143,21 @@ int controlPump(int error, int total, int target){
 	prevError = error;
 	return total;
 }
+
+
 // drivePump: controls the valve and pump to correctly react to a correction
 void drivePump(int correction, int target){
+	static int pwmCurrent 	= 0;
+
 	printf("Correction: %d\n", correction);
 	if(correction < 0){
 	// This means we need to pump more to catch up as we are lagging
 		printf("Push\n\n");
 		if (correction < -1*PWM_MAX/2){
-			correction = -1*PWM_MAX/2;
+			correction = -1*pwmCurrent; //-1*PWM_MAX/2;
+		}
+		if (pwmCurrent < PWM_MAX/2){
+			pwmCurrent = pwmCurrent + PWM_STEP; 
 		}
 		pwmWrite(PUMP_PIN, (-1*correction));
 		digitalWrite(VALVE_PIN, HIGH);
@@ -165,8 +173,11 @@ void drivePump(int correction, int target){
 		printf("Wait\n\n");
 		pwmWrite(PUMP_PIN, PWM_MIN);
 		digitalWrite(VALVE_PIN, HIGH);
+		pwmCurrent = 0;
 	}
+	return;
 }
+
 // Rounds to nearest integer
 double round(double number){
 	return (number - floor(number) >= 0.5) ? ceil(number) : floor(number);

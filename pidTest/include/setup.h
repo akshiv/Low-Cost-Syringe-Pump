@@ -15,19 +15,19 @@
 
 
 // Configure syringe information
-#define SYRINGE_MAX_READING 930000
-#define SYRINGE_MIN_READING 867000 // Need to set infusion limits based on known limits of values
-#define SYRINGE_VOLUME_UL 19000
+#define SYRINGE_MAX_READING 930000  // ?
+#define SYRINGE_MIN_READING 867000  // Need to set infusion limits based on known limits of values
+#define SYRINGE_VOLUME_UL 19000 	// Max Syringe Volume
 #define READING_PER_UL (double) (SYRINGE_MAX_READING-SYRINGE_MIN_READING)/SYRINGE_VOLUME_UL //Estimated as Linear
-#define MAX_RATE 200000
-#define MIN_RATE 10000
-#define MAX_VOLUME 20000
-#define MIN_VOLUME 1000
+#define MAX_RATE 200000 	//
+#define MIN_RATE 10000		//
+#define MAX_VOLUME 20000	//
+#define MIN_VOLUME 1000		//
 
-#define SAMPLING_NUMBER 20
-#define AVERAGING_INTERVAL_S 1
-#define AVERAGING_INTERVAL_US AVERAGING_INTERVAL_S * 1000000
-#define HR_TO_SEC 0.000277778
+#define SAMPLING_NUMBER 20 		//
+#define AVERAGING_INTERVAL_S 1	//
+#define AVERAGING_INTERVAL_US AVERAGING_INTERVAL_S * 1000000 //
+#define HR_TO_SEC 0.000277778	//
 
 // rPiSetup: Sets up WiringPi, Interrupt, and Output Pins for proper board operation
 // The board is setup with the pump off, interrupt enabled and valve open.
