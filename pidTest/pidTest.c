@@ -23,34 +23,30 @@
 #define PWM_MIN 0
 #define PWM_MAX 1024
 
+// Setup constants for control
 #define KD 0
-#define KP 0
-#define KI 0
-#define WINDUP_THRESHOLD 10
+#define KP 10
+#define KI 4
+#define WINDUP_THRESHOLD 100
+#define JUMP_REJECTION_THRESHOLD 10000 // Need to determine and set properly
+#define MAX_CORRECTION 10000 
+#define BLOWOFF_TIME 200
 
+// Configure syringe information
 #define SYRINGE_MAX_READING 930000
 #define SYRINGE_MIN_READING 867000 // Need to set infusion limits based on known limits of values
 #define SYRINGE_VOLUME_UL 19000
 #define READING_PER_UL (double) (SYRINGE_MAX_READING-SYRINGE_MIN_READING)/SYRINGE_VOLUME_UL //Estimated as Linear
-
-// Configure rate and volume limits
 #define MAX_RATE 200000
 #define MIN_RATE 10000
 #define MAX_VOLUME 20000
 #define MIN_VOLUME 1000
 
-#define SAMPLING_NUMBER 10
-
-#define AVERAGING_INTERVAL_S 10
+#define SAMPLING_NUMBER 20
+#define AVERAGING_INTERVAL_S 1
 #define AVERAGING_INTERVAL_US AVERAGING_INTERVAL_S * 1000000
-
-#define JUMP_REJECTION_THRESHOLD 10000 // Need to determine and set properly
-#define MAX_CORRECTION 10000 
-#define BLOWOFF_TIME 100
-
 #define HR_TO_SEC 0.000277778
 
-#define SET_PWM_TEST 0
 
 void exitHandler(int);
 void counterInterrupt(void);
@@ -71,8 +67,13 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Error: Need to input arguments as Flow rate, then total volume.\n");
 		exit(-1);
 	}
-	#endif
-	#ifndef SET_PWM_TEST
+	int power = atoi(argv[3]); // Get power to push the pump with
+	// Check to make sure the power is in range
+	if(power < PWM_MIN || power > PWM_MAX){
+		fprintf(stderr, "Error: Power target out of range.\n");
+		exit(-1);
+	}
+	#else
 	if(argc != 3){
 		fprintf(stderr, "Error: Need to input arguments as Flow rate, then total volume.\n");
 		exit(-1);
@@ -91,21 +92,12 @@ int main(int argc, char **argv) {
 		exit(-1);
 	}
 
-	#ifdef SET_PWM_TEST
-	int power = atoi(argv[3]); // Get power to push the pump with
-	// Check to make sure the power is in range
-	if(power < PWM_MIN || power > PWM_MAX){
-		fprintf(stderr, "Error: Power target out of range.\n");
-		exit(-1);
-	}
-	#endif
-
 	// Setup shutdown protocol
 	signal(SIGINT, exitHandler);
 
 	// Configure Raspberry Pi
 	rPiSetup();
-
+	delay(1000);
 	// Set up targets for control
 	int target = setTarget(rate);
 	int totalTarget = setTotal(volume);
@@ -120,7 +112,6 @@ int main(int argc, char **argv) {
 	
 	printf("Target Rate: %d, Target Total: %d\n\n", target, totalTarget);
 	while(total < totalTarget){
-		delay(2000);	
 		printf("Feedback value: %d\n",timeDiff);
 		#ifndef SET_PWM_TEST
 		error = getError(target);
@@ -196,13 +187,14 @@ int getError(int target){
 		// force the values to only sum if changes indicate correct direction, but maybe
 		// this is bad for back pressure
 		if(fabs(timeDiff - valOld) < JUMP_REJECTION_THRESHOLD){
-			change = change + (timeDiff-valOld);
+			change = change - (timeDiff-valOld);
 		} 
 		valOld = timeDiff;
 	}
 	// Use the counts read in from the timeDiff value
 	// Maybe add some sort of jump rejection to deal with setpoint shifts from movement
 	int error = change - target;
+	printf("Change: %d\n", change);
 	return error;
 }
 
@@ -212,7 +204,7 @@ int controlPump(int error, int total, int target){
 	static int integralError = 0;
 	static int prevError = 0;
 
-	total = total + (error + target);
+	total = total - (error - target);
 	int derivError = error - prevError;
 	integralError = integralError + error; 
 	if (integralError > WINDUP_THRESHOLD){
@@ -221,27 +213,33 @@ int controlPump(int error, int total, int target){
 		integralError = -1*WINDUP_THRESHOLD;
 	}
 
-	int correction = KP*error + KD*derivError + KI*integralError;			
+	int correction = KP*error + KD*derivError + KI*integralError;
+	printf("Error: %d, Integral Error: %d\n", error, integralError);	
 	drivePump(correction, target);
-
 	prevError = error;
 	return total;
 }
 // drivePump: controls the valve and pump to correctly react to a correction
 void drivePump(int correction, int target){
-	double scaledCorrection = (double) correction / target  * PWM_MAX;
-	if(scaledCorrection < 0){
+	printf("Correction: %d\n", correction);
+	if(correction < 0){
 	// This means we need to pump more to catch up as we are lagging
-		pwmWrite(PUMP_PIN, (int) (-1*scaledCorrection));
+		printf("Push\n\n");
+		if (correction < -1*PWM_MAX/2){
+			correction = -1*PWM_MAX/2;
+		}
+		pwmWrite(PUMP_PIN, (-1*correction));
 		digitalWrite(VALVE_PIN, HIGH);
-	} else if (scaledCorrection > target){
+	} else if (correction > PWM_MAX){
 	// If the pump is moving very fast we open the valve to blow off some air
+		printf("Blowoff\n\n");
 		pwmWrite(PUMP_PIN, PWM_MIN);
 		digitalWrite(VALVE_PIN, LOW);
-		delay(BLOWOFF_TIME*scaledCorrection/target);
+		delay(BLOWOFF_TIME);
 		digitalWrite(VALVE_PIN, HIGH);
 	} else {
 	// If the pump is slighly too fast we stop pumping
+		printf("Wait\n\n");
 		pwmWrite(PUMP_PIN, PWM_MIN);
 		digitalWrite(VALVE_PIN, HIGH);
 	}
