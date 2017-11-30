@@ -1,5 +1,10 @@
 CC=gcc
-CFLAGS=-I.
+CFLAGS=-lwiringPi -lm -I.
+DEPS = setup.h interrupt.h
+OBJ = pidTest.o setup.o interrupt.o
 
-pidTest: pidTest.c 
-	gcc -Wall -o pidTest pidTest.c -lwiringPi -lm 
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+pidTest: $(OBJ)
+	gcc -Wall -o $@ $^ $(CFLAGS) 
