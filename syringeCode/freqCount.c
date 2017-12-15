@@ -14,7 +14,7 @@
 #define HIGH 1
 #define COUNTER_PIN 0
 
-#define SAMPLING_NUMBER 100
+#define SAMPLING_NUMBER 250
 
 void counterInterrupt(void);
 

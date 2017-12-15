@@ -16,13 +16,17 @@
 
 // Setup constants for control
 #define KD 0   							// Derivative Control Constant 
-#define KP 10  							// Proportional Control Constant 
-#define KI 4							// Integral Control Constant 
-#define WINDUP_THRESHOLD 100 			// Used to avoid sudden changes
-#define JUMP_REJECTION_THRESHOLD 10000  // Need to determine and set properly
+#define KP 1  							// Proportional Control Constant 
+#define KI 0.5							// Integral Control Constant 
+#define WINDUP_THRESHOLD 200 			// Used to avoid sudden changes
 #define MAX_CORRECTION 10000 			// ?
-#define BLOWOFF_TIME 200 				// ?
-#define PWM_STEP 1 						// Per cycle of the PWM rate 
+#define BLOWOFF_TIME 100 				// ?
+#define STEP_UP 20						// Per cycle of the PWM rate
+#define STEP_UP_MAX 100
+#define STEP_DOWN 20
+#define STEP_DOWN_MAX 100
+#define STEP_UP_THRESHOLD 0 //Threshold for when we increment the pwm value for output 
+#define PWM_LIMIT 450
 
 void exitHandler(int);
 int getError(int);
@@ -83,6 +87,7 @@ int main(int argc, char **argv) {
 	#endif		
 	
 	printf("Target Rate: %d, Target Total: %d\n\n", target, totalTarget);
+	delay(5000);
 	while(total < totalTarget){
 		printf("Feedback value: %d\n",timeDiff);
 		#ifndef SET_PWM_TEST
@@ -90,6 +95,8 @@ int main(int argc, char **argv) {
 		total = controlPump(error, total, target);
 		#endif
 	}
+	pwmWrite(PUMP_PIN, PWM_MIN);
+	digitalWrite(VALVE_PIN, LOW);
 	return 0;
 }
 
@@ -105,16 +112,8 @@ void exitHandler(int sig){
 int getError(int target){
 	int change = 0;
 	int valOld = timeDiff;
-	int timeStart = micros();
-	while(micros() < (timeStart + AVERAGING_INTERVAL_US)){
-		// Make sure that this condition is what we want to use. Alternatively could
-		// force the values to only sum if changes indicate correct direction, but maybe
-		// this is bad for back pressure
-		if(fabs(timeDiff - valOld) < JUMP_REJECTION_THRESHOLD){
-			change = change - (timeDiff-valOld);
-		} 
-		valOld = timeDiff;
-	}
+	while(timeDiff == valOld){}
+	change = -1*(timeDiff - valOld);
 	// Use the counts read in from the timeDiff value
 	// Maybe add some sort of jump rejection to deal with setpoint shifts from movement
 	int error = change - target;
@@ -138,7 +137,7 @@ int controlPump(int error, int total, int target){
 	}
 
 	int correction = KP*error + KD*derivError + KI*integralError;
-	printf("Error: %d, Integral Error: %d\n", error, integralError);	
+	printf("Error: %d, Integral Error: %d, Correction: %d\n", error, integralError, correction);	
 	drivePump(correction, target);
 	prevError = error;
 	return total;
@@ -148,33 +147,45 @@ int controlPump(int error, int total, int target){
 // drivePump: controls the valve and pump to correctly react to a correction
 void drivePump(int correction, int target){
 	static int pwmCurrent 	= 0;
-
-	printf("Correction: %d\n", correction);
+	int step = 0;
 	if(correction < 0){
 	// This means we need to pump more to catch up as we are lagging
 		printf("Push\n\n");
-		if (correction < -1*PWM_MAX/2){
-			correction = -1*pwmCurrent; //-1*PWM_MAX/2;
+		if (correction < STEP_UP_THRESHOLD){
+			step = -1*correction;
+			if(step > STEP_UP_MAX){
+				step = STEP_UP_MAX;
+			}
+			pwmCurrent = pwmCurrent + step; 
 		}
-		if (pwmCurrent < PWM_MAX/2){
-			pwmCurrent = pwmCurrent + PWM_STEP; 
+		if (pwmCurrent > PWM_LIMIT){
+			pwmCurrent = PWM_LIMIT;
 		}
-		pwmWrite(PUMP_PIN, (-1*correction));
+		pwmWrite(PUMP_PIN, pwmCurrent);
 		digitalWrite(VALVE_PIN, HIGH);
-	} else if (correction > PWM_MAX){
+	} else if (correction > 1000*target){
 	// If the pump is moving very fast we open the valve to blow off some air
 		printf("Blowoff\n\n");
 		pwmWrite(PUMP_PIN, PWM_MIN);
 		digitalWrite(VALVE_PIN, LOW);
 		delay(BLOWOFF_TIME);
 		digitalWrite(VALVE_PIN, HIGH);
+		pwmCurrent = 0;
 	} else {
 	// If the pump is slighly too fast we stop pumping
+		step = correction;
+		if(step > STEP_DOWN_MAX){
+			step = STEP_DOWN_MAX;
+		}
 		printf("Wait\n\n");
-		pwmWrite(PUMP_PIN, PWM_MIN);
+		pwmCurrent = pwmCurrent - step;
+	  	if(pwmCurrent < 0){
+			pwmCurrent = 0;
+		}
+		pwmWrite(PUMP_PIN, pwmCurrent);
 		digitalWrite(VALVE_PIN, HIGH);
-		pwmCurrent = 0;
 	}
+	printf("PWMCurrent: %d\n", pwmCurrent);
 	return;
 }
 

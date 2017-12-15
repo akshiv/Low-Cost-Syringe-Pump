@@ -7,7 +7,7 @@
 #include "interrupt.h"
 
 // rPiSetup: Sets up WiringPi, Interrupt, and Output Pins for proper board operation
-// The board is setup with the pump off, interrupt enabled and valve open.
+/// The board is setup with the pump off, interrupt enabled and valve open.
 void rPiSetup(void){
 	wiringPiSetup();
 
@@ -23,7 +23,7 @@ void rPiSetup(void){
 // setTarget: Takes the specified rate, volume, and averaging interval, and returns the 
 // target count value per measurement interval 
 int setTarget(int rate){
-	return round(HR_TO_SEC * rate * READING_PER_UL * AVERAGING_INTERVAL_S);
+	return round(HR_TO_SEC * rate * READING_PER_UL);
 }
 
 // setTotal: Takes the specified rate, volume, and averaging interval, and returns the 
