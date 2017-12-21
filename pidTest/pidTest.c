@@ -16,16 +16,15 @@
 
 // Setup constants for control
 #define KD 0   							// Derivative Control Constant 
-#define KP 1  							// Proportional Control Constant 
-#define KI 0.5							// Integral Control Constant 
+#define KP 2  							// Proportional Control Constant 
+#define KI 1							// Integral Control Constant 
 #define WINDUP_THRESHOLD 200 			// Used to avoid sudden changes
 #define MAX_CORRECTION 10000 			// ?
 #define BLOWOFF_TIME 100 				// ?
 #define STEP_UP 20						// Per cycle of the PWM rate
-#define STEP_UP_MAX 100
+#define STEP_UP_MAX 25
 #define STEP_DOWN 20
-#define STEP_DOWN_MAX 100
-#define STEP_UP_THRESHOLD 0 //Threshold for when we increment the pwm value for output 
+#define STEP_DOWN_MAX 50
 #define PWM_LIMIT 450
 
 void exitHandler(int);
@@ -151,13 +150,11 @@ void drivePump(int correction, int target){
 	if(correction < 0){
 	// This means we need to pump more to catch up as we are lagging
 		printf("Push\n\n");
-		if (correction < STEP_UP_THRESHOLD){
-			step = -1*correction;
-			if(step > STEP_UP_MAX){
-				step = STEP_UP_MAX;
-			}
-			pwmCurrent = pwmCurrent + step; 
+		step = -1*correction;
+		if(step > STEP_UP_MAX){
+			step = STEP_UP_MAX;
 		}
+			pwmCurrent = pwmCurrent + step; 
 		if (pwmCurrent > PWM_LIMIT){
 			pwmCurrent = PWM_LIMIT;
 		}
