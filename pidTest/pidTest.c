@@ -14,18 +14,19 @@
 #include "setup.h"
 #include "interrupt.h"
 
-// Setup constants for control
+// Constants for error control
 #define KD 0   							// Derivative Control Constant 
 #define KP 2  							// Proportional Control Constant 
 #define KI 1							// Integral Control Constant 
 #define WINDUP_THRESHOLD 200 			// Used to avoid sudden changes
-#define MAX_CORRECTION 10000 			// ?
-#define BLOWOFF_TIME 100 				// ?
-#define STEP_UP 20						// Per cycle of the PWM rate
+
+// Constants for pump driving
+#define STEP_UP 20						// Per cycle of the control loop
 #define STEP_UP_MAX 25
 #define STEP_DOWN 20
 #define STEP_DOWN_MAX 50
 #define PWM_LIMIT 450
+#define BLOWOFF_TIME 100 				// Controls the duration of valve opening for releasing pressure
 
 void exitHandler(int);
 int getError(int);
@@ -73,6 +74,7 @@ int main(int argc, char **argv) {
 	// Configure Raspberry Pi
 	rPiSetup();
 	delay(1000);
+
 	// Set up targets for control
 	int target = setTarget(rate);
 	int totalTarget = setTotal(volume);
@@ -80,41 +82,55 @@ int main(int argc, char **argv) {
 	int total = 0;
 	
 	#ifdef SET_PWM_TEST
+	// If testing pump response to different driving PWM, this mode simply lets the air pump 
+	// run at a specified PWM
 	digitalWrite(VALVE_PIN,HIGH);
 	delay(1000);
 	pwmWrite(PUMP_PIN,power);
 	#endif		
 	
+	// Display the setup info, then wait to let feedback counter settle 
+	// Without this delay, the first feedback value is often incorrect and large
 	printf("Target Rate: %d, Target Total: %d\n\n", target, totalTarget);
 	delay(5000);
+
+	// Run this loop until we have infused the desired total volume
 	while(total < totalTarget){
 		printf("Feedback value: %d\n",timeDiff);
+
+		// Compute errors and apply control feedback for each iteration
 		#ifndef SET_PWM_TEST
 		error = getError(target);
 		total = controlPump(error, total, target);
 		#endif
 	}
+
+	// Once infusion is finished, turn all pumping off
 	pwmWrite(PUMP_PIN, PWM_MIN);
 	digitalWrite(VALVE_PIN, LOW);
 	return 0;
 }
 
-// Handles the proper shutdown of the code 
+// Handles the proper shutdown of the code, setting the pump off and valve open when ctrl+C is
+// used to stop the code.
 void exitHandler(int sig){
 	digitalWrite(VALVE_PIN,LOW);
 	pwmWrite(PUMP_PIN,PWM_MIN);
 	exit(0);
 }
 
-// getErro: Takes the target count value per measurement interval, then counts over the 
+// getError: Takes the target count value per measurement interval, then counts over the 
 // specified interval to determine the error over the interval. The error is returned
 int getError(int target){
 	int change = 0;
 	int valOld = timeDiff;
+
+	// Wait for a change in the feedback read-in then record this change
 	while(timeDiff == valOld){}
 	change = -1*(timeDiff - valOld);
-	// Use the counts read in from the timeDiff value
 	// Maybe add some sort of jump rejection to deal with setpoint shifts from movement
+	
+	// Calculate the error by comparing the real and target change
 	int error = change - target;
 	printf("Change: %d\n", change);
 	return error;
@@ -126,7 +142,10 @@ int controlPump(int error, int total, int target){
 	static int integralError = 0;
 	static int prevError = 0;
 
+	// Keep a running log of the total infusion by counting up 
 	total = total - (error - target);
+
+	// Calculate the derivative and integral error (with wind-up limits)
 	int derivError = error - prevError;
 	integralError = integralError + error; 
 	if (integralError > WINDUP_THRESHOLD){
@@ -135,6 +154,7 @@ int controlPump(int error, int total, int target){
 		integralError = -1*WINDUP_THRESHOLD;
 	}
 
+	// Calculate & output the final correction based on the errors
 	int correction = KP*error + KD*derivError + KI*integralError;
 	printf("Error: %d, Integral Error: %d, Correction: %d\n", error, integralError, correction);	
 	drivePump(correction, target);
@@ -147,35 +167,42 @@ int controlPump(int error, int total, int target){
 void drivePump(int correction, int target){
 	static int pwmCurrent 	= 0;
 	int step = 0;
+
+	// Based on the correction values we apply different actions to the pump
 	if(correction < 0){
-	// This means we need to pump more to catch up as we are lagging
+	// If the pump is lagging, we need to pump more to catch up as we are lagging
 		printf("Push\n\n");
+		
+		// Increase the pumping proportionally to the correction, up to a limit
 		step = -1*correction;
 		if(step > STEP_UP_MAX){
 			step = STEP_UP_MAX;
 		}
 			pwmCurrent = pwmCurrent + step; 
+		// Apply a limit on the maximum pump speed
 		if (pwmCurrent > PWM_LIMIT){
 			pwmCurrent = PWM_LIMIT;
 		}
 		pwmWrite(PUMP_PIN, pwmCurrent);
 		digitalWrite(VALVE_PIN, HIGH);
 	} else if (correction > 1000*target){
-	// If the pump is moving very fast we open the valve to blow off some air
+	// If the pump is moving too fast we open the valve to release pressure
 		printf("Blowoff\n\n");
 		pwmWrite(PUMP_PIN, PWM_MIN);
 		digitalWrite(VALVE_PIN, LOW);
 		delay(BLOWOFF_TIME);
 		digitalWrite(VALVE_PIN, HIGH);
+		// Reset the pump speed after blowoff
 		pwmCurrent = 0;
 	} else {
-	// If the pump is slighly too fast we stop pumping
+	// If the pump is slighly too fast we slow the pump speed, proportionally to the correction
 		step = correction;
 		if(step > STEP_DOWN_MAX){
 			step = STEP_DOWN_MAX;
 		}
 		printf("Wait\n\n");
 		pwmCurrent = pwmCurrent - step;
+		// Ensure the pump speed doesn't drop below zero
 	  	if(pwmCurrent < 0){
 			pwmCurrent = 0;
 		}
