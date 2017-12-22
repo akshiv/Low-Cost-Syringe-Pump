@@ -22,13 +22,13 @@ void rPiSetup(void){
 
 // setTarget: Takes the specified rate, volume, and averaging interval, and returns the 
 // target count value per measurement interval 
-int setTarget(int rate){
-	return round(HR_TO_SEC * rate * READING_PER_UL);
+int setTarget(int rate, int initialReading){
+	return round(HR_TO_SEC * rate * READING_PER_UL * initialReading * US_TO_SEC);
 }
 
 // setTotal: Takes the specified rate, volume, and averaging interval, and returns the 
 // total target count value over the duration of the pump infusion
-int setTotal(int volume){
-	return round(READING_PER_UL * volume);
+int setTotal(int volume, int initialReading){
+	return (initialReading - round(READING_PER_UL * volume));
 }
 

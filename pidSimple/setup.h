@@ -26,6 +26,7 @@
 
 #define SAMPLING_NUMBER 250
 #define HR_TO_SEC 0.000277778
+#define US_TO_SEC 0.000001
 
 // rPiSetup: Sets up WiringPi, Interrupt, and Output Pins for proper board operation
 // The board is setup with the pump off, interrupt enabled and valve open.
@@ -34,11 +35,11 @@ void rPiSetup(void);
 
 // setTarget: Takes the specified rate, volume, and averaging interval, and returns the 
 // target count value per measurement interval 
-int setTarget(int rate);
+int setTarget(int rate, int initialReading);
 
 
 // setTotal: Takes the specified rate, volume, and averaging interval, and returns the 
 // total target count value over the duration of the pump infusion
-int setTotal(int volume);
+int setTotal(int volume, int initialReading);
 
 #endif
