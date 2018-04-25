@@ -20,7 +20,18 @@ To connect all electrical connections in the pump system, follow this raspberry 
 The pneumatic connections between the pump, valve, and drive syringe must also be connected using a tee-junction. Then all components can be arranged within the 3d printed chassis and the two halves of the chassis can be secured together with elastic bands. 
 
 ### First Run
+The syringe pump code repository has three main directories containing code which performs three different functions for developing and demonstrating the pump.
 
+#### freqCount
+The freqCount directory contains code which outputs the frequency counting values from the feedback system to the screen. This can be run to check the performance of the oscillator circuit, and to perform system calibration. 
+
+To calibrate the system, make sure the SAMPLING_NUMBER value in freqCount.c and pidPump/setup.h are the same. Then run the freqCount code with both an empty and full syringe, noting the feedback values measured, and the volume difference between the two measurement points. Finally, input these values into pidPump/setup.h as the SYRINGE_MAX_READING (larger of two measurements), SYRINGE_MIN_READING, and SYRINGE_VOLUME_UL (this value in microliters).
+
+#### pwmTest
+
+#### pidPump
+
+###### test
 ## Potential Future Projects 
 
 ### Feedback system design for a Low-Cost Syringe Pump for Global Medicine
