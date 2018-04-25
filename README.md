@@ -33,9 +33,19 @@ To calibrate the system, make sure the SAMPLING_NUMBER value in freqCount.c and 
 
 #### pwmTest
 
-The pwmTest code runs the pump at a set
+The pwmTest code runs the pump at a set PWM until the code is terminated with CTRL+C.
+
+This can be run using: sudo ./pwmTest 400
+
+For example, where 400 is the desired fixed PWM (in range 0 to 1024), and the sudo command is necessary to make the PWM operate properly.
 
 #### pidPump
+
+The pidPump code runs the pump with feedback controlled by the oscillator. Note that the oscillator should first be tested with the freqCount code to ensure it is working properly as it can be sensitive to connections within the chassis and the positioning of the syringe. Adjustments and fiddling may be needed to ensure the oscillation is working properly.
+
+This can be run using: sudo ./pidPump targetRateUl targetVolumeUl
+
+Where the targets are given in microliters and the sudo command is necessary.
 
 ## Potential Future Projects 
 
