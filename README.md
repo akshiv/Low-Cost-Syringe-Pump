@@ -1,6 +1,8 @@
 # Low Cost Syringe Pump
 Repo for the ENPH 479 syringe pump project
 
+![SystemOverview](https://raw.githubusercontent.com/akshivbansal/Low-Cost-Syringe-Pump/documentation/documentation/figures/System%20Overview.png)
+
 ## Introduction
 This readme document serves as a guide to future development of the low cost syringe pump project. This document will outline the details of basic use and development. Further details on design approach and project motivation can be found in the engineering recommendation report for the project, which is located in this same git repository. 
 
@@ -16,6 +18,8 @@ One can then connect to the Raspberry Pi using SSH either through the terminal o
 
 ### Pump Setup
 To connect all electrical connections in the pump system, follow this raspberry pi pinout chart, and the following diagrams which show the connections for the two pump circuit boards (the oscillator on the left and motor driver on the right).
+![Driver Connections](https://raw.githubusercontent.com/akshivbansal/Low-Cost-Syringe-Pump/documentation/documentation/figures/Driver%20Connections.png)
+![Oscillator Connections](https://raw.githubusercontent.com/akshivbansal/Low-Cost-Syringe-Pump/documentation/documentation/figures/Oscillator%20Connections.jpg)
 
 The pneumatic connections between the pump, valve, and drive syringe must also be connected using a tee-junction. Then all components can be arranged within the 3d printed chassis and the two halves of the chassis can be secured together with elastic bands. 
 
