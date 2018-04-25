@@ -1,0 +1,102 @@
+[Polymer_Material]
+[First_Kind]
+   Group_No                   =  70
+   Material_No                =  2
+   Material_Name              =  PET
+   Product_Name               =  "(P)  Generic material / Generic material of PET+30%GF"       | 2.900000e+002     1.050000e+002     2.000000e+002
+   Melt_Temp                  =  2.900000e+002
+   Mold_Temp                  =  1.050000e+002
+   Eject_Temp                 =  2.000000e+002
+   Glass_Temp                 =  1   2.1500000000e+002
+   Specific_Heat              =  1   2.3000000000e+007
+   Conductivity               =  1   3.0000000000e+004
+   Viscosity                  =  7   1.6000000000e+015   3.4015000000e+002   0.0000000000e+000   3.3754000000e+001   5.1600000000e+001   3.7000000000e+005   4.2120000000e-001
+   Density                    =  13   7.4000000000e-001   3.7750000000e-004   1.4795000000e+009   2.8300000000e-003   7.0234000000e-001   2.3350000000e-004   1.9307200000e+009   4.1000000000e-003   5.2645000000e+002   1.8000000000e-008   3.6600000000e-002   1.0111000000e-001   1.9525000000e-009
+   Shear_Modulus              =  -1
+                                 -1
+   Thermal_Volume_Expans_Coeff=  2   2.6500000000e-005   4.3500000000e-005
+   Young_Modulus              =  2   1.0365000000e+011   6.5500000000e+010
+   Poisson_Ratio              =  2   4.2000000000e-001   4.7000000000e-001
+   Curing_Kinetics            =  -1
+   NoFlow_Temp                =  -1
+   Melt_Flow_Rate_Index       =  1   2.7000000000e+001
+   Fiber                      =  1   3.0000000000e+001
+   Max_Shear_Rate             =  1   5.0000000000e+004
+   Max_Shear_Stress           =  1   5.0000000000e+006
+   MaxMin_MeltMold_Temp       =  4   3.0000000000e+002   2.8000000000e+002   1.1000000000e+002   1.0000000000e+002
+   Stress_Optic_Coeff         =  -1
+   Leonov_VE_Data             =  6   5.3300000000e+002   1.4910000000e+003   1.7700000000e-002   9.4500000000e+002   2.3200000000e-003   2.1100000000e-003
+   Leonov_VE_WLF              =  3   2.7500000000e+000   1.3800000000e+002   5.3300000000e+002
+   Parallel_Shear_Modulus     =  -1
+[Second_Kind]
+   Group_No                   =  1
+   Material_No                =  1
+   Material_Name              =  ABS
+   Product_Name               =  (P)  ASAHI CHEM / R240A       | 2.400000e+002     5.200000e+001     1.000000e+002
+   Melt_Temp                  =  2.400000e+002
+   Mold_Temp                  =  5.200000e+001
+   Eject_Temp                 =  1.000000e+002
+   Glass_Temp                 =  1   1.0500000000e+002
+   Specific_Heat              =  1   2.0460000000e+007
+   Conductivity               =  1   2.1900000000e+004
+   Viscosity                  =  7   5.9800000000e+014   3.7310000000e+002   0.0000000000e+000   3.1490000000e+001   5.1600000000e+001   3.8020000000e+005   2.6730000000e-001
+   Density                    =  13   8.3440000000e-001   4.9600000000e-004   1.8800000000e+009   4.3220000000e-003   8.3440000000e-001   2.0800000000e-004   2.7700000000e+009   3.2000000000e-003   3.7310000000e+002   4.0000000000e-008   0.0000000000e+000   0.0000000000e+000   0.0000000000e+000
+   Shear_Modulus              =  -1
+                                 -1
+   Thermal_Volume_Expans_Coeff=  2   3.9100000000e-005   7.6000000000e-005
+   Young_Modulus              =  1   2.6000000000e+010
+   Poisson_Ratio              =  2   4.1700000000e-001   3.9900000000e-001
+   Curing_Kinetics            =  -1
+   NoFlow_Temp                =  -1
+   Melt_Flow_Rate_Index       =  -1
+   Fiber                      =  1   2.0000000000e+001
+   Max_Shear_Rate             =  1   1.1800000000e+004
+   Max_Shear_Stress           =  1   2.8200000000e+006
+   MaxMin_MeltMold_Temp       =  4   2.8000000000e+002   2.0000000000e+002   8.0000000000e+001   2.0000000000e+001
+   Stress_Optic_Coeff         =  -1
+   Leonov_VE_Data             =  -1
+   Leonov_VE_WLF              =  -1
+   Parallel_Shear_Modulus     =  -1
+[EOF]
+
+[Minsert_Material]
+   Material_No                =  1
+   Material_Name              =  Steel - 420SS
+   Specific_Heat              =  1     4.620000e+006
+   Conductivity               =  1     2.500000e+006
+   Density                    =  1     7.730000e+000
+   Shear_Modulus              =  1     7.900000e+011
+   Thermal_Volume_Expans_Coeff=  1     1.300000e-005
+   Young_Modulus              =  1     2.100000e+012
+   Poisson_Ratio              =  1     2.800000e-001
+[EOF]
+
+[Mold_Material]
+   Material_No                =  1
+   Material_Name              =  Steel - 420SS
+   Specific_Heat              =  1     4.620000e+006
+   Conductivity               =  1     2.500000e+006
+   Density                    =  1     7.730000e+000
+   Shear_Modulus              =  1     7.900000e+011
+   Thermal_Volume_Expans_Coeff=  1     1.300000e-005
+   Young_Modulus              =  1     2.100000e+012
+   Poisson_Ratio              =  1     2.800000e-001
+[EOF]
+
+[Cool_Material]
+   Material_No                =  1
+   Material_Name              =  Water
+   Specific_Heat              =  1     4.183000e+007
+   Conductivity               =  1     5.980000e+004
+   Density                    =  1     1.000000e+000
+   Viscosity                  =  1     1.006000e-002
+[EOF]
+
+[Data_Bank]
+ First_Kind = 1
+ Second_Kind = 2
+ Minsert_Material = 1
+ Mold_Material = 1
+ Cool_Material = 1
+[EOF]
+
