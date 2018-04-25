@@ -29,9 +29,10 @@ To calibrate the system, make sure the SAMPLING_NUMBER value in freqCount.c and 
 
 #### pwmTest
 
+The pwmTest code runs the pump at a set
+
 #### pidPump
 
-###### test
 ## Potential Future Projects 
 
 ### Feedback system design for a Low-Cost Syringe Pump for Global Medicine
