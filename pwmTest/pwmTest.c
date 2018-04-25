@@ -26,6 +26,7 @@
 #define STEP_DOWN_MAX 50
 #define PWM_LIMIT 450
 #define BLOWOFF_TIME 100 				// Controls the duration of valve opening for releasing pressure
+#define READING_DELAY 500
 
 void exitHandler(int);
 int getError(int);
@@ -37,26 +38,14 @@ volatile int timeDiff = 0;
 
 int main(int argc, char **argv) {
 	// Read in the specified rate and volume parameters
-	if(argc != 4){
-		fprintf(stderr, "Error: Need to input arguments as Flow rate, then total volume.\n");
+	if(argc != 2){
+		fprintf(stderr, "Error: Need to input one argument as the PWM target between 0 and 1024.\n");
 		exit(-1);
 	}
-	int power = atoi(argv[3]); // Get power to push the pump with
+	int power = atoi(argv[1]); // Get power to push the pump with
 	// Check to make sure the power is in range
 	if(power < PWM_MIN || power > PWM_MAX){
 		fprintf(stderr, "Error: Power target out of range.\n");
-		exit(-1);
-	}
-	int rate = atoi(argv[1]); // Get flow rate in uL/h
-	// Check to make sure the flow rate is in range
-	if( rate < MIN_RATE || rate > MAX_RATE ){
-		fprintf(stderr, "Error: Flow rate out of range.\n");
-		exit(-1);
-	}
-	int volume = atoi(argv[2]); // Get total volume goal in uL
-	// Check to make sure the volume is in range
-	if(volume < MIN_VOLUME || volume > MAX_VOLUME){
-		fprintf(stderr, "Error: Volume target out of range.\n");
 		exit(-1);
 	}
 
@@ -67,11 +56,6 @@ int main(int argc, char **argv) {
 	rPiSetup();
 	delay(1000);
 
-	// Set up targets for control
-	int target = setTarget(rate);
-	int totalTarget = setTotal(volume);
-	int error;
-	int total = 0;
 	
 	// If testing pump response to different driving PWM, this mode simply lets the air pump 
 	// run at a specified PWM
@@ -81,13 +65,13 @@ int main(int argc, char **argv) {
 	
 	// Display the setup info, then wait to let feedback counter settle 
 	// Without this delay, the first feedback value is often incorrect and large
-	printf("Target Rate: %d, Target Total: %d\n\n", target, totalTarget);
+	printf("Pumping at PWM: %d\n",power);
 	delay(5000);
 
 	// Run this loop until we have infused the desired total volume
-	while(total < totalTarget){
+	while(TRUE){
 		printf("Feedback value: %d\n",timeDiff);
-
+		delay(READING_DELAY);
 	}
 
 	// Once infusion is finished, turn all pumping off
