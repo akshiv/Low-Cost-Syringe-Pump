@@ -1,6 +1,8 @@
 # Low Cost Syringe Pump
 Repo for the ENPH 479 syringe pump project
 
+![SystemOverview](https://raw.githubusercontent.com/akshivbansal/Low-Cost-Syringe-Pump/documentation/documentation/figures/System%20Overview.png)
+
 ## Introduction
 This readme document serves as a guide to future development of the low cost syringe pump project. This document will outline the details of basic use and development. Further details on design approach and project motivation can be found in the engineering recommendation report for the project, which is located in this same git repository. 
 
@@ -16,10 +18,24 @@ One can then connect to the Raspberry Pi using SSH either through the terminal o
 
 ### Pump Setup
 To connect all electrical connections in the pump system, follow this raspberry pi pinout chart, and the following diagrams which show the connections for the two pump circuit boards (the oscillator on the left and motor driver on the right).
+![Driver Connections](https://raw.githubusercontent.com/akshivbansal/Low-Cost-Syringe-Pump/documentation/documentation/figures/Driver%20Connections.png)
+![Oscillator Connections](https://raw.githubusercontent.com/akshivbansal/Low-Cost-Syringe-Pump/documentation/documentation/figures/Oscillator%20Connections.jpg)
 
 The pneumatic connections between the pump, valve, and drive syringe must also be connected using a tee-junction. Then all components can be arranged within the 3d printed chassis and the two halves of the chassis can be secured together with elastic bands. 
 
 ### First Run
+The syringe pump code repository has three main directories containing code which performs three different functions for developing and demonstrating the pump.
+
+#### freqCount
+The freqCount directory contains code which outputs the frequency counting values from the feedback system to the screen. This can be run to check the performance of the oscillator circuit, and to perform system calibration. 
+
+To calibrate the system, make sure the SAMPLING_NUMBER value in freqCount.c and pidPump/setup.h are the same. Then run the freqCount code with both an empty and full syringe, noting the feedback values measured, and the volume difference between the two measurement points. Finally, input these values into pidPump/setup.h as the SYRINGE_MAX_READING (larger of two measurements), SYRINGE_MIN_READING, and SYRINGE_VOLUME_UL (this value in microliters).
+
+#### pwmTest
+
+The pwmTest code runs the pump at a set
+
+#### pidPump
 
 ## Potential Future Projects 
 
